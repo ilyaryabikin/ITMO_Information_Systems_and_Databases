@@ -1,1 +1,2 @@
-# ITMO_Information_Systems_and_Databases
+# ITMO Information Systems and Databases
+- [Lab 1](lab1/)
