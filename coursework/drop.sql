@@ -1,0 +1,30 @@
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TABLE IF EXISTS transactions_types CASCADE;
+DROP TABLE IF EXISTS transactions CASCADE;
+DROP TABLE IF EXISTS students CASCADE;
+DROP TABLE IF EXISTS teachers CASCADE;
+DROP TABLE IF EXISTS students_teachers CASCADE;
+DROP TABLE IF EXISTS subject_types CASCADE;
+DROP TABLE IF EXISTS subjects CASCADE;
+DROP TABLE IF EXISTS materials CASCADE;
+DROP TABLE IF EXISTS classes CASCADE;
+DROP TABLE IF EXISTS classes_materials CASCADE;
+DROP TABLE IF EXISTS classes_participants CASCADE;
+DROP TABLE IF EXISTS class_submissions CASCADE;
+
+DROP TRIGGER IF EXISTS check_teacher_student_duplicate_trigger ON teachers CASCADE;
+DROP TRIGGER IF EXISTS check_student_teacher_duplicate_trigger ON students CASCADE;
+DROP TRIGGER IF EXISTS class_check_time_trigger ON classes CASCADE;
+DROP TRIGGER IF EXISTS class_participants_trigger ON classes_participants CASCADE;
+DROP TRIGGER IF EXISTS hash_new_password_trigger ON users CASCADE;
+DROP TRIGGER IF EXISTS hash_updated_password_trigger ON users CASCADE;
+
+DROP FUNCTION IF EXISTS check_student_teacher_duplicate_function();
+DROP FUNCTION IF EXISTS check_teacher_student_duplicate_function();
+DROP FUNCTION IF EXISTS class_participants_function();
+DROP FUNCTION IF EXISTS class_submission_function();
+DROP FUNCTION IF EXISTS class_check_time_function();
+DROP FUNCTION IF EXISTS hash_password_function();
+DROP FUNCTION IF EXISTS create_student(email varchar, password varchar, name varchar, surname varchar);
+DROP FUNCTION IF EXISTS create_teacher(email varchar, password varchar, name varchar, surname varchar);
