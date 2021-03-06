@@ -1,0 +1,19 @@
+vaadin-vertical-layout {
+    overflow-y: auto;
+}
+
+vaadin-button {
+    margin-top: var(--lumo-space-m);
+}
+
+vaadin-radio-group::part(label) {
+    align-self: center;
+}
+
+vaadin-radio-group::part(group-field) {
+    align-self: center;
+}
+
+#register-form {
+    margin: 0 auto;
+}

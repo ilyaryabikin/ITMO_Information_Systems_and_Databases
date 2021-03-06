@@ -1,0 +1,11 @@
+#invitation-code-layout {
+    align-items: center;
+}
+
+#invitation-code-field {
+    padding-left: var(--lumo-space-m);
+}
+
+#proceed-button {
+    margin: auto var(--lumo-space-m);
+}

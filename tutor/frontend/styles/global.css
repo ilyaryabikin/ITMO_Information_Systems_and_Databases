@@ -1,0 +1,4 @@
+vaadin-button {
+    --lumo-clickable-cursor: pointer;
+    cursor: var(--lumo-clickable-cursor);
+}

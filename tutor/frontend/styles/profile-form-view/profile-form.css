@@ -1,0 +1,25 @@
+#invitation-code {
+    font-size: var(--lumo-font-size-xl);
+}
+
+#profile-form {
+    margin: var(--lumo-size-m) auto;
+    padding: var(--lumo-size-m) var(--lumo-size-m);
+    align-self: center;
+    height: 100%;
+}
+
+#profile-form-layout {
+    overflow-y: auto;
+}
+
+#remove-avatar {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+vaadin-upload {
+    box-sizing: border-box;
+    margin-top: calc(var(--lumo-size-s) * 0.3);
+    margin-bottom: calc(var(--lumo-size-s) * 0.3);
+}

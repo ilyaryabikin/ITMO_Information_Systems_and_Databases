@@ -1,0 +1,18 @@
+#lessons {
+    flex-grow: 1;
+}
+
+#toolbar vaadin-date-picker {
+    visibility: hidden;
+    position: fixed;
+    width: 0;
+    height: 0;
+}
+
+#toolbar vaadin-horizontal-layout {
+    margin-top: auto;
+}
+
+full-calendar {
+    flex-grow: 1;
+}
