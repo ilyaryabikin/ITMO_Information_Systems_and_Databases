@@ -91,13 +91,6 @@ CREATE TABLE IF NOT EXISTS materials
     uuid       character varying(255) UNIQUE NOT NULL
 );
 
-/*CREATE TABLE IF NOT EXISTS lessons_materials
-(
-    lesson_id   integer NOT NULL REFERENCES lessons ON DELETE RESTRICT,
-    material_id integer NOT NULL REFERENCES materials ON DELETE RESTRICT,
-    PRIMARY KEY (lesson_id, material_id)
-);*/
-
 CREATE TABLE IF NOT EXISTS lessons_students
 (
     lesson_id  integer NOT NULL REFERENCES lessons ON DELETE RESTRICT,
@@ -120,4 +113,105 @@ CREATE TABLE IF NOT EXISTS lesson_submissions
 
 CREATE INDEX IF NOT EXISTS user_email_index ON users USING hash (email);
 CREATE INDEX IF NOT EXISTS user_password_index ON users USING hash (password);
-CREATE INDEX IF NOT EXISTS login_token_series_index ON login_tokens USING hash (series);
+CREATE INDEX IF NOT EXISTS login_token_series_index ON login_tokens USING hash (series);;
+
+/* Insert only if creator of the class with specified id is the teacher of
+   the student with specified id */
+CREATE OR REPLACE FUNCTION class_participants_function()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    RAISE DEBUG 'Trigger function class_participants_function() fired';
+    IF EXISTS(
+            SELECT 1
+            FROM lessons
+                     INNER JOIN teachers ON lessons.teacher_id = teachers.id
+                     INNER JOIN students_teachers ON teachers.id = students_teachers.teacher_id
+                     INNER JOIN students ON students_teachers.student_id = students.id
+            WHERE lessons.id = new.lesson_id
+              AND students.id = new.student_id
+        )
+    THEN
+        RETURN new;
+    ELSE
+        RAISE EXCEPTION 'Creator of the class with id % is not teacher of student with id %',
+            new.lesson_id, new.student_id;
+        RETURN NULL;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS class_participants_trigger ON lessons_students;
+CREATE TRIGGER class_participants_trigger
+    BEFORE INSERT
+    ON lessons_students
+    FOR EACH ROW
+EXECUTE PROCEDURE class_participants_function();
+
+/* Insert only if new class doesn't overlap other teacher's classes and starts
+   after now */
+CREATE OR REPLACE FUNCTION class_check_time_function()
+    RETURNS TRIGGER AS
+$$
+DECLARE
+    row lessons%rowtype;
+BEGIN
+    RAISE DEBUG 'Trigger function class_check_time_function() fired';
+    IF new.start_date < localtimestamp
+    THEN
+        RAISE EXCEPTION 'Start time of new lesson is before now';
+        RETURN NULL;
+    END IF;
+    FOR row IN
+        SELECT *
+        FROM lessons
+        WHERE lessons.teacher_id = new.teacher_id
+          AND lessons.start_date >= localtimestamp
+        LOOP
+            IF NOT ((new.start_date > row.start_date AND new.start_date >= row.end_date) OR
+               (new.end_date <= row.start_date AND new.end_date < row.end_date))
+            THEN
+                RAISE EXCEPTION 'Lesson start time is not unique and overlaps class with id %', row.id;
+                RETURN NULL;
+            END IF;
+        END LOOP;
+    RETURN new;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS class_check_time_trigger ON lessons;
+CREATE TRIGGER class_check_time_trigger
+    BEFORE INSERT
+    ON lessons
+    FOR EACH ROW
+EXECUTE PROCEDURE class_check_time_function();
+
+/* Insert only if student with specified id is participant of
+   class with specified id */
+CREATE OR REPLACE FUNCTION class_submission_function()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    RAISE DEBUG 'Trigger function class_submission_function() fired';
+    IF EXISTS(
+            SELECT 1
+            FROM lessons_students
+            WHERE student_id = new.student_id
+              AND lesson_id = new.lesson_id
+        )
+    THEN
+        RETURN new;
+    ELSE
+        RAISE EXCEPTION 'Student with id % is not participant of class with id %',
+            new.student_id, new.lesson_id;
+        RETURN NULL;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS class_submission_trigger ON lesson_submissions;
+CREATE TRIGGER class_submission_trigger
+    BEFORE INSERT
+    ON lesson_submissions
+    FOR EACH ROW
+EXECUTE PROCEDURE class_submission_function();

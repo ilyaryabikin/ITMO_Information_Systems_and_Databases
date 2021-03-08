@@ -7,6 +7,7 @@ import se.ifmo.databases.tutor.models.UserLoginToken;
 
 @Repository
 public interface UserLoginTokenRepository extends PersistableRepository<UserLoginToken, Long> {
+
   @EntityGraph(attributePaths = {"user"})
   Optional<UserLoginToken> findBySeries(final String series);
 

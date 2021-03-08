@@ -22,4 +22,4 @@ VALUES ('Maths'),
        ('Physics'),
        ('Astronomy'),
        ('Law')
-ON CONFLICT (name) DO UPDATE SET name = excluded.name;
+ON CONFLICT (name) DO UPDATE SET name = excluded.name;;

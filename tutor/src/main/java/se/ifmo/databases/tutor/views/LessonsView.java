@@ -52,6 +52,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -273,6 +274,7 @@ public class LessonsView extends VerticalLayout {
 
     private Lesson currentLesson;
     private Entry currentEntry;
+    private boolean isNew;
 
     private TextField nameField;
     private DateTimePicker startDatePicker;
@@ -283,14 +285,15 @@ public class LessonsView extends VerticalLayout {
     public LessonDialog(final Person person, final Entry currentEntry, boolean isNew)
         throws EntityNotFoundException {
       this.currentEntry = currentEntry;
+      this.isNew = isNew;
       setCloseOnEsc(true);
 
-      initLessonLayout(person, isNew);
+      initLessonLayout(person);
 
       add(lessonLayout);
     }
 
-    private void initLessonLayout(final Person currentPerson, boolean isNew)
+    private void initLessonLayout(final Person currentPerson)
         throws EntityNotFoundException {
       currentLesson =
           isNew ? new Lesson() : lessonService.findEntityById(Long.valueOf(currentEntry.getId()));
@@ -494,6 +497,10 @@ public class LessonsView extends VerticalLayout {
               final var submissionGridDataProvider =
                   (ListDataProvider<Submission>) submissionGrid.getDataProvider();
               lessonBinder.writeBean(lesson);
+              if (isLessonDateInvalid(lesson, lesson.getStudents())) {
+                Notification.show("Current lesson overlaps another!");
+                return;
+              }
               lesson.setSubmissions(new ArrayList<>(submissionGridDataProvider.getItems()));
               final Lesson savedLesson = lessonService.saveEntity(lesson);
               if (materialsUploaded.get()) {
@@ -543,7 +550,6 @@ public class LessonsView extends VerticalLayout {
               Notification.show("Something went wrong!");
             }
           });
-
       if (!isCurrentTeacher.get()) {
         nameField.setReadOnly(true);
         subjectComboBox.setReadOnly(true);
@@ -596,6 +602,40 @@ public class LessonsView extends VerticalLayout {
       lessonLayout.setColspan(buttonsLayout, 2);
     }
 
+    private boolean isLessonDateInvalid(
+        final Lesson lesson, final Iterable<? extends Person> participants) {
+      final Instant now = Instant.now();
+      final Collection<Lesson> teacherLessons =
+          lessonService.findAllByTeacherIdAfterDate(currentPerson.getId(), now);
+      final Collection<Lesson> participantLessons = new ArrayList<>();
+      for (final var participant : participants) {
+        participantLessons.addAll(
+            lessonService.findAllByStudentIdAfterDate(participant.getId(), now));
+      }
+
+      for (final var teacherLesson : teacherLessons) {
+        if (isLessonNotUnique(lesson, teacherLesson)) {
+          return true;
+        }
+      }
+      for (final var participantLesson : participantLessons) {
+        if (isLessonNotUnique(lesson, participantLesson)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private boolean isLessonNotUnique(final Lesson newLesson, final Lesson currentLesson) {
+      final boolean isNewActivityAfterCurrent =
+          newLesson.getStartDate().isAfter(currentLesson.getStartDate())
+              && newLesson.getStartDate().compareTo(currentLesson.getEndDate()) >= 0;
+      final boolean isNewActivityBeforeCurrent =
+          newLesson.getEndDate().compareTo(currentLesson.getStartDate()) <= 0
+              && newLesson.getEndDate().isBefore(currentLesson.getEndDate());
+      return !(isNewActivityAfterCurrent || isNewActivityBeforeCurrent);
+    }
+
     private void initBinder() {
       lessonBinder
           .forField(nameField)
@@ -606,6 +646,9 @@ public class LessonsView extends VerticalLayout {
 
       lessonBinder
           .forField(startDatePicker)
+          .withValidator(
+              val -> !isNew || val.isAfter(calendar.getTimezone().convertToLocalDateTime(Instant.now())),
+              "Start time should be after now")
           .withValidator(
               val -> val != null && val.isBefore(endDatePicker.getValue()),
               "Start time should be before end time")

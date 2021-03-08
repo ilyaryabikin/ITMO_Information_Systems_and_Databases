@@ -12,21 +12,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebMvc
 public class WebMvcConfig implements WebMvcConfigurer {
 
-  /*@Bean
-  public SimpleUrlHandlerMapping faviconHandlerMapping() {
-    final var mapping = new SimpleUrlHandlerMapping();
-    mapping.setUrlMap(Collections.singletonMap("/icon.png", faviconRequestHandler()));
-    return mapping;
-  }
-
-  @Bean
-  public ResourceHttpRequestHandler faviconRequestHandler() {
-    final var requestHandler = new ResourceHttpRequestHandler();
-    final var classPathResource = new ClassPathResource("icons");
-    requestHandler.setLocations(List.of(classPathResource));
-    return requestHandler;
-  }*/
-
   @Override
   public void addResourceHandlers(final ResourceHandlerRegistry registry) {
     registry
