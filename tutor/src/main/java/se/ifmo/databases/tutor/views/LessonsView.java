@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.vaadin.gatanaso.MultiselectComboBox;
 import org.vaadin.stefan.fullcalendar.CalendarView;
@@ -293,8 +294,7 @@ public class LessonsView extends VerticalLayout {
       add(lessonLayout);
     }
 
-    private void initLessonLayout(final Person currentPerson)
-        throws EntityNotFoundException {
+    private void initLessonLayout(final Person currentPerson) throws EntityNotFoundException {
       currentLesson =
           isNew ? new Lesson() : lessonService.findEntityById(Long.valueOf(currentEntry.getId()));
 
@@ -386,6 +386,9 @@ public class LessonsView extends VerticalLayout {
                   materialService.deleteEntity(material);
                   dataProvider.refreshAll();
                 });
+            if (!isCurrentTeacher.get()) {
+              removeButton.setVisible(false);
+            }
             return removeButton;
           });
       materialGrid.getColumns().forEach(column -> column.setAutoWidth(true));
@@ -436,7 +439,8 @@ public class LessonsView extends VerticalLayout {
                   submissionService.deleteEntity(submission);
                   dataProvider.refreshAll();
                 });
-            if (isCurrentTeacher.get()) {
+            if (isCurrentTeacher.get()
+                || submission.getStudent().getId().equals(currentPerson.getId())) {
               removeButton.setVisible(false);
             }
             return removeButton;
@@ -445,7 +449,7 @@ public class LessonsView extends VerticalLayout {
       submissionGrid.setWidthFull();
 
       final MultiFileMemoryBuffer submissionMemoryBuffer = new MultiFileMemoryBuffer();
-      final Upload submissionUpload = new Upload(materialMemoryBuffer);
+      final Upload submissionUpload = new Upload(submissionMemoryBuffer);
       submissionUpload.setDropLabel(new Span("Upload submissions"));
       final AtomicBoolean submissionsUploaded = new AtomicBoolean(false);
 
@@ -497,7 +501,7 @@ public class LessonsView extends VerticalLayout {
               final var submissionGridDataProvider =
                   (ListDataProvider<Submission>) submissionGrid.getDataProvider();
               lessonBinder.writeBean(lesson);
-              if (isLessonDateInvalid(lesson, lesson.getStudents())) {
+              if (isNew && isLessonDateInvalid(lesson, lesson.getStudents())) {
                 Notification.show("Current lesson overlaps another!");
                 return;
               }
@@ -604,7 +608,7 @@ public class LessonsView extends VerticalLayout {
 
     private boolean isLessonDateInvalid(
         final Lesson lesson, final Iterable<? extends Person> participants) {
-      final Instant now = Instant.now();
+      final var now = Instant.now();
       final Collection<Lesson> teacherLessons =
           lessonService.findAllByTeacherIdAfterDate(currentPerson.getId(), now);
       final Collection<Lesson> participantLessons = new ArrayList<>();
@@ -647,7 +651,9 @@ public class LessonsView extends VerticalLayout {
       lessonBinder
           .forField(startDatePicker)
           .withValidator(
-              val -> !isNew || val.isAfter(calendar.getTimezone().convertToLocalDateTime(Instant.now())),
+              val ->
+                  !isNew
+                      || val.isAfter(calendar.getTimezone().convertToLocalDateTime(Instant.now())),
               "Start time should be after now")
           .withValidator(
               val -> val != null && val.isBefore(endDatePicker.getValue()),

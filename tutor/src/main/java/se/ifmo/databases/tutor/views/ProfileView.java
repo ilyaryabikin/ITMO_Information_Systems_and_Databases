@@ -30,6 +30,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import java.time.LocalDate;
 import java.util.Objects;
+import lombok.val;
 import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.vaadin.gatanaso.MultiselectComboBox;

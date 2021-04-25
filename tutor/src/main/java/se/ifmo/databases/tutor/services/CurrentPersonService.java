@@ -4,6 +4,7 @@ import static se.ifmo.databases.tutor.models.AuthorityRoles.STUDENT;
 import static se.ifmo.databases.tutor.models.AuthorityRoles.TEACHER;
 
 import java.util.Optional;
+import javax.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,9 +29,13 @@ public class CurrentPersonService {
   public Person getCurrentPerson() {
     final UserDetails currentUser = getCurrentUserDetails();
     if (currentUser.getAuthorities().contains(STUDENT.getAuthority())) {
-      return studentRepository.findByUserUsername(currentUser.getUsername()).orElseThrow();
+      return studentRepository
+          .findByUserUsername(currentUser.getUsername())
+          .orElseThrow(EntityNotFoundException::new);
     } else if (currentUser.getAuthorities().contains(TEACHER.getAuthority())) {
-      return teacherRepository.findByUserUsername(currentUser.getUsername()).orElseThrow();
+      return teacherRepository
+          .findByUserUsername(currentUser.getUsername())
+          .orElseThrow(EntityNotFoundException::new);
     }
     throw new UnsupportedOperationException();
   }
